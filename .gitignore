@@ -1,0 +1,30 @@
+# Build output
+bin/
+obj/
+
+# Your MongoDB connection string lives here. Keeping it out of source control is
+# the single most important line in this file - a leaked Atlas URI includes the
+# username and password for your cluster.
+appsettings.Development.json
+
+# Contains your MongoDB connection string, same as appsettings.Development.json.
+# .mcp.json is normally committed, but not when it holds credentials - an Atlas URI
+# embeds your cluster username and password. Each developer runs `dotnet new` (or
+# copies this file) with their own connection string. If you'd rather commit it,
+# replace the value with "${MDB_MCP_CONNECTION_STRING}" and set that in your shell.
+.mcp.json
+
+# Personal Claude Code overrides. .claude/settings.json IS committed on purpose -
+# it enables the MongoDB plugin for everyone working on the project.
+.claude/settings.local.json
+
+# User-specific and IDE files
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+.DS_Store
+
+# macOS tooling occasionally drops this into the project folder
+Library/

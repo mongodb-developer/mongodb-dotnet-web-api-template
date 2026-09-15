@@ -1,0 +1,76 @@
+@host = http://localhost:5241
+
+### Readiness - pings MongoDB. Run this first to confirm your connection string works.
+GET {{host}}/health
+Accept: application/json
+
+### Liveness - process is up, does not touch the database.
+GET {{host}}/health/live
+
+### Create a book. Copy the "id" from the response into the requests below.
+POST {{host}}/books
+Content-Type: application/json
+
+{
+  "title": "The Little Mongo Book",
+  "author": "Karl Seguin",
+  "pageCount": 60,
+  "publishedOn": "2011-11-01T00:00:00Z",
+  "tags": [ "mongodb", "databases", "beginner" ],
+  "publisherName": "Self published",
+  "publisherCountry": "CA"
+}
+
+### List books, newest first.
+GET {{host}}/books?skip=0&limit=20
+Accept: application/json
+
+### Fetch one book.
+@bookId = paste-an-id-here
+GET {{host}}/books/{{bookId}}
+Accept: application/json
+
+### Find books by tag - served by the multikey index on "tags".
+GET {{host}}/books/by-tag/mongodb?limit=20
+Accept: application/json
+
+### Projection example - ids and titles only, no full documents over the wire.
+GET {{host}}/books/titles?limit=100
+Accept: application/json
+
+### Validation failure - [ApiController] rejects this with 400 problem+json
+### before any database call is made.
+POST {{host}}/books
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": "Nobody",
+  "pageCount": -5,
+  "publishedOn": "2020-01-01T00:00:00Z"
+}
+
+### Aggregation: book and page counts grouped by author.
+GET {{host}}/books/stats/by-author
+Accept: application/json
+
+### Replace a book in full.
+PUT {{host}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "title": "The Little Mongo Book (2nd edition)",
+  "author": "Karl Seguin",
+  "pageCount": 72,
+  "publishedOn": "2012-01-01T00:00:00Z",
+  "tags": [ "mongodb", "databases" ]
+}
+
+### Partial update - sets a single field with $set.
+PATCH {{host}}/books/{{bookId}}/page-count?pageCount=80
+
+### Delete a book.
+DELETE {{host}}/books/{{bookId}}
+
+### OpenAPI document (development only).
+GET {{host}}/openapi/v1.json

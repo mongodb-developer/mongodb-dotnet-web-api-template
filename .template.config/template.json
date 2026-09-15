@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Luce Carter",
+  "classifications": [
+    "Common",
+    "Web API",
+    "API",
+    "Database",
+    "MongoDB",
+    "MongoDB Atlas"
+  ],
+  "name": "MongoDB Web API App",
+  "description": "An ASP.NET Core Web API wired up to MongoDB following driver best practices, with a documented example model, CRUD and aggregation endpoints, index creation and a health check.",
+  "identity": "MongoDB.MongoDBWebAPIApp",
+  "shortName": "mongodb-webapi",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "WebApiProjectWithMongoDB",
+  "preferNameDirectory": true,
+  "symbols": {
+    "MongoDBConnectionString": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "Your MongoDB connection string. Written to appsettings.Development.json only, which is gitignored.",
+      "replaces": "mongodb://localhost:27017",
+      "defaultValue": "mongodb://localhost:27017"
+    },
+    "DatabaseName": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "The MongoDB database name. It does not need to exist - MongoDB creates it on first write.",
+      "replaces": "appdb",
+      "defaultValue": "appdb"
+    },
+    "SkipSample": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Leave out the example Book model, service and endpoints, giving you just the MongoDB plumbing.",
+      "defaultValue": "false"
+    },
+    "SkipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "If specified, skips the automatic restore of the project on create.",
+      "defaultValue": "false"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(SkipSample)",
+          "exclude": [
+            "Models/Book.cs",
+            "Models/BookDtos.cs",
+            "Services/BookService.cs",
+            "Services/MongoDbIndexInitializer.cs",
+            "Controllers/BooksController.cs",
+            "WebApiProjectWithMongoDB.http"
+          ]
+        }
+      ],
+      "exclude": [
+        "**/[Bb]in/**",
+        "**/[Oo]bj/**",
+        "**/*.sln",
+        "**/Library/**",
+        ".vs/**",
+        ".git/**",
+        ".template.config/**"
+      ]
+    }
+  ],
+  "primaryOutputs": [
+    {
+      "path": "WebApiProjectWithMongoDB.csproj"
+    }
+  ],
+  "postActions": [
+    {
+      "id": "restore",
+      "condition": "(!SkipRestore)",
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

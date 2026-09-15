@@ -1,0 +1,6 @@
+{
+  "//": "Enables MongoDB's official Claude Code plugin for anyone working in this project. It ships skills covering connection management, schema design, indexing and query optimisation, plus the MongoDB MCP server. Claude Code prompts to install it on first use; the plugin comes from the built-in claude-plugins-official marketplace, so no extra setup is needed.",
+  "enabledPlugins": {
+    "mongodb@claude-plugins-official": true
+  }
+}
