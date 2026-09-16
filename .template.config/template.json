@@ -69,7 +69,9 @@
         "**/Library/**",
         ".vs/**",
         ".git/**",
-        ".template.config/**"
+        ".template.config/**",
+        "AGENTS.md",
+        "LICENSE"
       ]
     }
   ],

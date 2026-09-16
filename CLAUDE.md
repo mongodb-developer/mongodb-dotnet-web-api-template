@@ -5,6 +5,9 @@ template. This file tells Claude Code (and any other AI assistant that reads it)
 conventions this codebase already follows, so generated code matches rather than
 fights them.
 
+For build and test commands, project structure and environment variables, see
+[AGENTS.md](./AGENTS.md).
+
 ## MongoDB skills
 
 This project enables MongoDB's official Claude Code plugin via `.claude/settings.json`.
