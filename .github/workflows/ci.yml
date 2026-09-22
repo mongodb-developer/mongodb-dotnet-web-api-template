@@ -1,0 +1,209 @@
+name: CI
+
+# A green `dotnet build` at the repo root proves very little here: this is a
+# template, and most defects are template-engine defects - a substitution that
+# didn't fire, a conditional marker left in the output, a file that leaked into
+# generated projects. So CI generates real projects and tests those.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  template:
+    name: Generate, build and smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Fastest signal: does the template content itself still compile?
+      - name: Build template content
+        run: dotnet build --warnaserror
+
+      - name: Install the template
+        run: dotnet new install .
+
+      - name: Generate a project (full)
+        run: |
+          dotnet new mongodb-webapi \
+            -o /tmp/Full.Api -n Full.Api \
+            --connection-string "mongodb://localhost:27017/?replicaSet=rs0" \
+            --database ci_full
+
+      - name: Generate a project (--no-sample)
+        run: |
+          dotnet new mongodb-webapi \
+            -o /tmp/Plumbing.Api -n Plumbing.Api \
+            --no-sample
+
+      # These are the failures a plain build cannot catch.
+      - name: Check generated output
+        run: |
+          set -euo pipefail
+          fail=0
+
+          # Repo-only files must never ship to a generated project.
+          for dir in /tmp/Full.Api /tmp/Plumbing.Api; do
+            for f in AGENTS.md LICENSE template-README.md .template.config .github; do
+              if [ -e "$dir/$f" ]; then
+                echo "::error::$f leaked into $dir"
+                fail=1
+              fi
+            done
+            # The template README must have been renamed into place.
+            if [ ! -f "$dir/README.md" ]; then
+              echo "::error::$dir is missing README.md"
+              fail=1
+            fi
+          done
+
+          # Conditional markers must be stripped, not passed through verbatim.
+          # NB: --include must come BEFORE the pattern. Putting a `--` ahead of the
+          # pattern makes grep treat the --include flags as filenames, which exits 2
+          # and makes this check silently pass. Don't "tidy" this back.
+          if grep -rn \
+               --include='*.cs' --include='*.md' --include='*.json' --include='*.http' \
+               '#if (\|#endif\|#else\|SkipSample' \
+               /tmp/Full.Api /tmp/Plumbing.Api; then
+            echo "::error::leftover template conditional markers in generated output"
+            fail=1
+          fi
+
+          # The sample must actually be gone from the --no-sample variant.
+          for f in Models/Book.cs Services/BookService.cs Controllers/BooksController.cs; do
+            if [ -e "/tmp/Plumbing.Api/$f" ]; then
+              echo "::error::--no-sample still produced $f"
+              fail=1
+            fi
+          done
+
+          # Parameter substitution must have fired.
+          if ! grep -q '"DatabaseName": "ci_full"' /tmp/Full.Api/appsettings.json; then
+            echo "::error::--database was not substituted"
+            fail=1
+          fi
+          if ! grep -q 'replicaSet=rs0' /tmp/Full.Api/appsettings.Development.json; then
+            echo "::error::--connection-string was not substituted"
+            fail=1
+          fi
+
+          exit $fail
+
+      - name: Build generated projects
+        run: |
+          dotnet build /tmp/Full.Api --warnaserror
+          dotnet build /tmp/Plumbing.Api --warnaserror
+
+      # A replica set, not a standalone mongod: the template enables retryable
+      # writes and majority concerns, which standalone does not support.
+      - name: Start MongoDB
+        run: |
+          set -euo pipefail
+          docker run -d --name mongo -p 27017:27017 \
+            mongo:8 --replSet rs0 --bind_ip_all
+
+          for i in $(seq 1 30); do
+            if docker exec mongo mongosh --quiet --eval 'db.adminCommand({ping:1})' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          docker exec mongo mongosh --quiet --eval \
+            'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
+
+          for i in $(seq 1 30); do
+            if [ "$(docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary')" = "true" ]; then
+              echo "replica set primary is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::replica set did not elect a primary"
+          exit 1
+
+      - name: Smoke test the generated API
+        run: |
+          set -euo pipefail
+
+          ASPNETCORE_ENVIRONMENT=Development \
+            dotnet run --project /tmp/Full.Api --no-launch-profile \
+            --urls http://localhost:5241 > /tmp/api.log 2>&1 &
+
+          # Readiness genuinely pings MongoDB, so this also proves the driver
+          # configuration and index creation worked.
+          for i in $(seq 1 45); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/health || true)" = "200" ]; then
+              echo "API healthy"
+              break
+            fi
+            sleep 2
+          done
+
+          check() {
+            local label="$1" expected="$2" actual="$3"
+            if [ "$actual" = "$expected" ]; then
+              echo "ok   $label -> $actual"
+            else
+              echo "::error::$label expected $expected, got $actual"
+              return 1
+            fi
+          }
+
+          fail=0
+
+          check "health (readiness)" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/health)" || fail=1
+          check "health/live" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/health/live)" || fail=1
+
+          body='{"title":"CI Book","author":"CI","pageCount":42,"publishedOn":"2026-01-01T00:00:00Z","tags":["ci"]}'
+          created=$(curl -s -X POST http://localhost:5241/books \
+            -H 'Content-Type: application/json' -d "$body")
+          id=$(echo "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+          echo "created id=$id"
+
+          check "get by id" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:5241/books/$id")" || fail=1
+          check "list" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' 'http://localhost:5241/books?limit=5')" || fail=1
+          check "by tag" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/books/by-tag/ci)" || fail=1
+          check "projection" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/books/titles)" || fail=1
+          check "aggregation" 200 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/books/stats/by-author)" || fail=1
+          check "delete" 204 \
+            "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://localhost:5241/books/$id")" || fail=1
+          check "delete again is 404" 404 \
+            "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "http://localhost:5241/books/$id")" || fail=1
+          check "malformed id is 404 not 500" 404 \
+            "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/books/not-an-objectid)" || fail=1
+          check "invalid body is 400" 400 \
+            "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:5241/books \
+               -H 'Content-Type: application/json' \
+               -d '{"title":"","author":"x","pageCount":0,"publishedOn":"2020-01-01T00:00:00Z"}')" || fail=1
+
+          # Indexes are created at startup; prove they actually exist.
+          echo "--- indexes"
+          docker exec mongo mongosh ci_full --quiet --eval \
+            'db.books.getIndexes().forEach(i => print(i.name))'
+
+          exit $fail
+
+      - name: API log
+        if: always()
+        run: tail -50 /tmp/api.log || true

@@ -71,8 +71,13 @@
         ".git/**",
         ".template.config/**",
         "AGENTS.md",
-        "LICENSE"
-      ]
+        "LICENSE",
+        "README.md",
+        ".github/**"
+      ],
+      "rename": {
+        "template-README.md": "README.md"
+      }
     }
   ],
   "primaryOutputs": [
