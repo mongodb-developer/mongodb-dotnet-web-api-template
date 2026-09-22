@@ -31,6 +31,23 @@ public sealed class MongoDbSettings
     [Required(AllowEmptyStrings = false)]
     public string DatabaseName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Reported to MongoDB as the client application name. It shows up in Atlas
+    /// connection metrics, in <c>db.currentOp()</c> and in server slow-query logs,
+    /// which makes "which service is opening all these connections?" and "who ran
+    /// this query?" answerable.
+    ///
+    /// The default follows MongoDB DevRel's naming convention
+    /// (<c>devrel-medium-primary-secondary-optional</c>) and identifies the project
+    /// as having come from this template, which is how template usage gets measured.
+    /// Leaving it alone is genuinely helpful. If you'd rather report your own
+    /// service name, set "MongoDB:ApplicationName" in configuration, or put
+    /// <c>?appName=your-service</c> in the connection string - either wins over
+    /// this default.
+    /// </summary>
+    [Required(AllowEmptyStrings = false)]
+    public string ApplicationName { get; set; } = "devrel-github-csharp-webapi-template";
+
 #if (!SkipSample)
     /// <summary>
     /// Collection backing the example <see cref="Models.Book"/> endpoints.

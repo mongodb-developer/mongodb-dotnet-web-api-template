@@ -115,9 +115,22 @@ public static class MongoDbRegistration
             // and cluster are in different regions, or on chatty read-heavy work.
             clientSettings.Compressors = [new CompressorConfiguration(CompressorType.Snappy)];
 
-            // Identify this app in Atlas's connection metrics and in server logs.
-            // Makes "which service is opening all these connections?" answerable.
-            clientSettings.ApplicationName = "WebApiProjectWithMongoDB";
+            // Identify this app to the server. appName surfaces in Atlas connection
+            // metrics, in db.currentOp() and in slow-query logs, which is what makes
+            // "which service is opening all these connections?" answerable.
+            //
+            // Only set it if the connection string didn't already. FromConnectionString
+            // populates ApplicationName from ?appName=, and assigning unconditionally
+            // would silently throw the user's choice away.
+            //
+            // The default (see MongoDbSettings.ApplicationName) identifies the project
+            // as generated from this template, which is how its usage gets measured.
+            // It is deliberately a fixed string rather than the project name, so it
+            // survives scaffolding - see the note in MongoDbSettings.
+            if (string.IsNullOrWhiteSpace(clientSettings.ApplicationName))
+            {
+                clientSettings.ApplicationName = settings.ApplicationName;
+            }
 
             // Route the driver's own diagnostics through ASP.NET Core logging, so
             // command execution, server selection and connection pool events land in

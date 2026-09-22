@@ -113,7 +113,25 @@ variables → command line.
 | `ASPNETCORE_ENVIRONMENT` | The generated app | `Development` enables OpenAPI and the Scalar UI |
 
 Config keys: `MongoDB:ConnectionString`, `MongoDB:DatabaseName`, and optionally
-`MongoDB:BooksCollectionName` (defaults to `books` in code).
+`MongoDB:ApplicationName` and `MongoDB:BooksCollectionName` (both default in code).
+
+### appName
+
+`MongoDbSettings.ApplicationName` defaults to `devrel-github-csharp-webapi-template`,
+following MongoDB DevRel's `devrel-medium-primary-secondary-optional` convention. It
+is reported to the server and shows up in Atlas connection metrics, `db.currentOp()`
+and slow-query logs.
+
+**Do not change it to the project name, and do not let it be rewritten by
+`sourceName`.** It is a fixed string precisely so it survives scaffolding - that is
+what lets template usage be measured. A generated project reports the same appName
+whatever it is called.
+
+Precedence, highest first: `?appName=` in the connection string →
+`MongoDB:ApplicationName` in config → the template default. The registration code
+only assigns the default when the connection string didn't supply one, because
+`MongoClientSettings.FromConnectionString` already populates `ApplicationName` from
+`?appName=` and overwriting it unconditionally would discard the user's choice.
 
 **Never commit a connection string.** `appsettings.Development.json` and `.mcp.json`
 both hold one and are both gitignored. An Atlas URI embeds the cluster username and

@@ -110,6 +110,14 @@ for rolling deploys.
 **UTC dates, camelCase fields, `ObjectId` as `string`.** Small conventions, applied
 globally so you don't repeat them per property.
 
+**An `appName` the server can see.** The client reports `devrel-github-csharp-webapi-template`,
+which appears in Atlas connection metrics, `db.currentOp()` and slow-query logs -
+so you can tell which service opened a connection or ran a slow query. It also lets
+MongoDB see how much this template is used, which is the main reason it exists;
+leaving it is appreciated. To report your own name instead, set
+`MongoDB:ApplicationName` in configuration or add `?appName=your-service` to the
+connection string - either takes precedence.
+
 **Cancellation tokens everywhere.** When a client disconnects, the query is
 cancelled rather than left running.
 

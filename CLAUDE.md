@@ -93,6 +93,11 @@ Remember the prefix rule: a compound index on `{a, b}` serves `a` and `a+b`, nev
 - **Validation lives on request records** as DataAnnotations. On a record's primary
   constructor, put the attribute on the *parameter* - no `property:` target. MVC
   throws if it finds validation metadata on a record's properties instead.
+- **`appName` is deliberately a fixed string**, not the project name. It identifies
+  projects generated from this template in MongoDB's metrics, so leave
+  `MongoDbSettings.ApplicationName` alone. Users who want their own name set
+  `MongoDB:ApplicationName` or `?appName=` in the connection string; both already
+  take precedence.
 - **Data access goes in `Services/`.** Controllers handle HTTP concerns only; no
   driver types, filters or BSON in a controller.
 
