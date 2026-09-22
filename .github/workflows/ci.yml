@@ -153,6 +153,18 @@ jobs:
             sleep 2
           done
 
+          # Fail fast with something readable. Without this the first request
+          # returns an error body, the id extraction below dies on a KeyError,
+          # and the real cause (API never reached the database) is buried.
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5241/health || true)" != "200" ]; then
+            echo "::error::API never became healthy - it could not reach MongoDB"
+            echo "--- readiness response"
+            curl -s http://localhost:5241/health || true
+            echo "--- application log"
+            tail -60 /tmp/api.log || true
+            exit 1
+          fi
+
           check() {
             local label="$1" expected="$2" actual="$3"
             if [ "$actual" = "$expected" ]; then
