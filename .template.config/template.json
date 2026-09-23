@@ -77,7 +77,8 @@
         "EDD.md"
       ],
       "rename": {
-        "template-README.md": "README.md"
+        "template-README.md": "README.md",
+        "template-appsettings.Development.json": "appsettings.Development.json"
       }
     }
   ],
