@@ -47,8 +47,8 @@ Install the template, either from NuGet or from a clone:
 dotnet new install MongoDB.MongoDBWebAPIApp
 
 # Or from a local clone
-git clone https://github.com/LuceCarter/WebApiProjectWithMongoDB.git
-cd WebApiProjectWithMongoDB
+git clone https://github.com/mongodb-developer/mongodb-dotnet-webapi-template.git
+cd mongodb-dotnet-webapi-template
 dotnet new install .
 ```
 
@@ -188,6 +188,15 @@ than merely enthusiastic:
   collection" works against your actual data - but cannot modify anything.
 - **`CLAUDE.md`** records the project's conventions, so generated code matches the
   codebase instead of fighting it.
+
+## Data model
+
+[EDD.md](./EDD.md) documents the example `Book`/`Publisher` model in
+[Entity Document Diagram](https://github.com/mongodb-developer/edd-skill) notation -
+entities, typed fields, cardinality, indexes and a Mermaid diagram - along with the
+reasoning behind embedding the publisher and bounding the tags array. It covers the
+template's example model, not your application's; regenerate it once you have
+replaced the sample with your own domain.
 
 ## Contributing
 

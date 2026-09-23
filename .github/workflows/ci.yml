@@ -57,7 +57,7 @@ jobs:
 
           # Repo-only files must never ship to a generated project.
           for dir in /tmp/Full.Api /tmp/Plumbing.Api; do
-            for f in AGENTS.md LICENSE template-README.md .template.config .github; do
+            for f in AGENTS.md LICENSE EDD.md template-README.md .template.config .github; do
               if [ -e "$dir/$f" ]; then
                 echo "::error::$f leaked into $dir"
                 fail=1

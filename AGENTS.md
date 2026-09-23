@@ -74,6 +74,9 @@ retryable writes and majority concerns.
 | `Models/Book.cs`, `Models/BookDtos.cs` | Example document and its request/response types *(sample)* |
 | `Controllers/BooksController.cs` | Example CRUD controller *(sample)* |
 | `WebApiProjectWithMongoDB.http` | Ready-to-run requests for the example endpoints *(sample)* |
+| `EDD.md` | Entity Document Diagram for the example model *(repo only)* |
+| `AGENTS.md`, `README.md`, `LICENSE` | Repository-level docs *(repo only)* |
+| `template-README.md` | Renamed to `README.md` in generated projects |
 | `CLAUDE.md` | Coding conventions and guardrails for generated projects |
 | `.claude/settings.json` | Enables the MongoDB plugin |
 | `.mcp.json` | MongoDB MCP server config (gitignored - holds a connection string) |
@@ -136,6 +139,24 @@ only assigns the default when the connection string didn't supply one, because
 **Never commit a connection string.** `appsettings.Development.json` and `.mcp.json`
 both hold one and are both gitignored. An Atlas URI embeds the cluster username and
 password. Don't write one into a tracked file, a comment or a test.
+
+## When To Use EDD.md
+
+Use [EDD.md](./EDD.md) as the source of truth for the MongoDB data model in this
+repository.
+
+Consult [EDD.md](./EDD.md) before making changes that touch:
+
+- MongoDB collections, document structure, or field names
+- Controllers or services that read or write database records
+- Validation, request/response types, or API payloads that depend on persisted data
+- Schema documentation, Mermaid diagrams, or entity modelling discussions
+
+It documents the template's *example* model (`Book`/`Publisher`) and is excluded from
+generated projects, because a scaffolded project that deletes the sample would
+otherwise carry a stale EDD. Regenerate it with the
+[EDD skill](https://github.com/mongodb-developer/edd-skill) if the example model
+changes: `npx skills add mongodb-developer/edd-skill`.
 
 ## MongoDB Skills
 

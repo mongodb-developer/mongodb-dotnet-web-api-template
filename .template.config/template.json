@@ -73,7 +73,8 @@
         "AGENTS.md",
         "LICENSE",
         "README.md",
-        ".github/**"
+        ".github/**",
+        "EDD.md"
       ],
       "rename": {
         "template-README.md": "README.md"
