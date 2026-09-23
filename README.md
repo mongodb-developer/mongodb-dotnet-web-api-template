@@ -10,7 +10,7 @@ Every file is heavily commented on purpose. The template is meant to be read as 
 as run, so the reasoning behind each setting sits next to the setting itself.
 
 ```bash
-dotnet new install MongoDB.MongoDBWebAPIApp
+dotnet new install MongoDB.WebApi.Templates
 dotnet new mongodb-webapi -n MyApi -c "mongodb+srv://..." --database myapp
 ```
 
@@ -44,7 +44,7 @@ Install the template, either from NuGet or from a clone:
 
 ```bash
 # From NuGet
-dotnet new install MongoDB.MongoDBWebAPIApp
+dotnet new install MongoDB.WebApi.Templates
 
 # Or from a local clone
 git clone https://github.com/mongodb-developer/mongodb-dotnet-webapi-template.git

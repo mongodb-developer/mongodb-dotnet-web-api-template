@@ -11,7 +11,7 @@
   ],
   "name": "MongoDB Web API App",
   "description": "An ASP.NET Core Web API wired up to MongoDB following driver best practices, with a documented example model, CRUD and aggregation endpoints, index creation and a health check.",
-  "identity": "MongoDB.MongoDBWebAPIApp",
+  "identity": "MongoDB.WebApi.Template.CSharp",
   "shortName": "mongodb-webapi",
   "tags": {
     "language": "C#",
