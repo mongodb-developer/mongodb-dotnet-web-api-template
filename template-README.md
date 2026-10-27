@@ -223,6 +223,9 @@ Swap the name in `.claude/settings.json` if you prefer it.
 - Add authentication - this template intentionally ships with none.
 - Point the readiness probe (`/health`) at your container orchestrator so an
   instance that can't reach MongoDB is pulled out of rotation.
+- Containerise it without writing a Dockerfile: the .NET SDK can build an image
+  directly with `dotnet publish -t:PublishContainer`. Pass the connection string at
+  run time with `-e MONGODB_URI=...`, never bake it into the image.
 
 ## Useful links
 

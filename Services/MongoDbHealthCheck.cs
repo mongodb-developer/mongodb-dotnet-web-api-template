@@ -14,12 +14,8 @@ namespace WebApiProjectWithMongoDB.Services;
 /// Wire this into your orchestrator's readiness probe so a container that can't
 /// reach MongoDB is taken out of the load balancer rather than serving errors.
 /// </summary>
-public sealed class MongoDbHealthCheck : IHealthCheck
+public sealed class MongoDbHealthCheck(IMongoDatabase database) : IHealthCheck
 {
-    private readonly IMongoDatabase _database;
-
-    public MongoDbHealthCheck(IMongoDatabase database) => _database = database;
-
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
@@ -33,7 +29,7 @@ public sealed class MongoDbHealthCheck : IHealthCheck
 
         try
         {
-            await _database.RunCommandAsync<BsonDocument>(
+            await database.RunCommandAsync<BsonDocument>(
                 new BsonDocument("ping", 1),
                 cancellationToken: timeout.Token);
 

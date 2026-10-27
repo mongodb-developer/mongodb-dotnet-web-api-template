@@ -61,10 +61,10 @@ public static class MongoDbRegistration
             // per-member topology monitoring connections.
             clientSettings.MaxConnectionPoolSize = 100;
 
-            // Keep a few connections pre-warmed so the first requests after an idle
+            // Keep a connection pre-warmed so the first requests after an idle
             // period don't each pay the handshake cost. Each idle connection costs
             // roughly 1 MB of RAM on the server, so keep this modest.
-            clientSettings.MinConnectionPoolSize = 10;
+            clientSettings.MinConnectionPoolSize = 1;
 
             // Prune connections that have sat unused this long. Long enough to get
             // real reuse, short enough that idle capacity is returned to the cluster.

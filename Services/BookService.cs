@@ -12,16 +12,12 @@ namespace WebApiProjectWithMongoDB.Services;
 /// means your HTTP layer never has to know about filters, projections or BSON.
 /// Swap this for a repository interface if you want to mock it in tests.
 /// </summary>
-public sealed class BookService
+public sealed class BookService(IMongoDatabase database, IOptions<MongoDbSettings> options)
 {
-    private readonly IMongoCollection<Book> _books;
-
-    public BookService(IMongoDatabase database, IOptions<MongoDbSettings> options)
-    {
-        // GetCollection<T> is cheap and thread-safe. It does not talk to the server -
-        // MongoDB creates the collection lazily on first write.
-        _books = database.GetCollection<Book>(options.Value.BooksCollectionName);
-    }
+    // GetCollection<T> is cheap and thread-safe. It does not talk to the server -
+    // MongoDB creates the collection lazily on first write.
+    private readonly IMongoCollection<Book> _books =
+        database.GetCollection<Book>(options.Value.BooksCollectionName);
 
     /// <summary>
     /// Lists books, newest first.

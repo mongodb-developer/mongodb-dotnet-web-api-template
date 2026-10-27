@@ -20,13 +20,12 @@ namespace WebApiProjectWithMongoDB.Controllers;
 // REST norm, so it's worth the small loss of refactor-safety here.
 [Route("books")]
 [Produces("application/json")]
-public sealed class BooksController : ControllerBase
+// Constructor injection via a primary constructor (C# 12). BookService is registered
+// in MongoDbRegistration.cs; controllers themselves are created per request by the
+// framework. The parameter is captured and usable throughout the class, which saves
+// the field-plus-assignment boilerplate.
+public sealed class BooksController(BookService books) : ControllerBase
 {
-    private readonly BookService _books;
-
-    // Constructor injection. BookService is registered in MongoDbRegistration.cs;
-    // controllers themselves are created per request by the framework.
-    public BooksController(BookService books) => _books = books;
 
     /// <summary>Lists books, newest first.</summary>
     [HttpGet(Name = "GetBooks")]
@@ -41,7 +40,7 @@ public sealed class BooksController : ControllerBase
         limit = Math.Clamp(limit, 1, 100);
         skip = Math.Max(skip, 0);
 
-        var results = await _books.GetAsync(skip, limit, cancellationToken);
+        var results = await books.GetAsync(skip, limit, cancellationToken);
 
         return Ok(results.Select(BookResponse.From));
     }
@@ -52,7 +51,7 @@ public sealed class BooksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BookResponse>> GetById(string id, CancellationToken cancellationToken)
     {
-        var book = await _books.GetByIdAsync(id, cancellationToken);
+        var book = await books.GetByIdAsync(id, cancellationToken);
 
         // NotFound() produces a bare 404. If you'd rather send a problem+json body
         // explaining why, use Problem(statusCode: 404, detail: "...") instead.
@@ -67,7 +66,7 @@ public sealed class BooksController : ControllerBase
         CancellationToken cancellationToken,
         [FromQuery] int limit = 20)
     {
-        var results = await _books.GetByTagAsync(tag, Math.Clamp(limit, 1, 100), cancellationToken);
+        var results = await books.GetByTagAsync(tag, Math.Clamp(limit, 1, 100), cancellationToken);
 
         return Ok(results.Select(BookResponse.From));
     }
@@ -79,7 +78,7 @@ public sealed class BooksController : ControllerBase
         CancellationToken cancellationToken,
         [FromQuery] int limit = 100)
     {
-        var results = await _books.GetTitlesAsync(Math.Clamp(limit, 1, 500), cancellationToken);
+        var results = await books.GetTitlesAsync(Math.Clamp(limit, 1, 500), cancellationToken);
 
         return Ok(results);
     }
@@ -90,7 +89,7 @@ public sealed class BooksController : ControllerBase
     public async Task<ActionResult<IEnumerable<AuthorSummary>>> GetStatsByAuthor(
         CancellationToken cancellationToken)
     {
-        var results = await _books.GetBooksPerAuthorAsync(cancellationToken);
+        var results = await books.GetBooksPerAuthorAsync(cancellationToken);
 
         return Ok(results);
     }
@@ -106,7 +105,7 @@ public sealed class BooksController : ControllerBase
         // No validation code needed here. [ApiController] runs the DataAnnotations
         // attributes on BookRequest automatically and short-circuits with a 400
         // problem+json response before this method is ever called.
-        var created = await _books.CreateAsync(request.ToBook(), cancellationToken);
+        var created = await books.CreateAsync(request.ToBook(), cancellationToken);
 
         // 201 with a Location header pointing at the new resource. CreatedAtRoute
         // builds that URL from the route name, so it stays correct even if you
@@ -127,7 +126,7 @@ public sealed class BooksController : ControllerBase
         BookRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await _books.UpdateAsync(id, request.ToBook(), cancellationToken);
+        var updated = await books.UpdateAsync(id, request.ToBook(), cancellationToken);
 
         return updated ? NoContent() : NotFound();
     }
@@ -141,7 +140,7 @@ public sealed class BooksController : ControllerBase
         [FromQuery] int pageCount,
         CancellationToken cancellationToken)
     {
-        var updated = await _books.UpdatePageCountAsync(id, pageCount, cancellationToken);
+        var updated = await books.UpdatePageCountAsync(id, pageCount, cancellationToken);
 
         return updated ? NoContent() : NotFound();
     }
@@ -152,7 +151,7 @@ public sealed class BooksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
-        var deleted = await _books.DeleteAsync(id, cancellationToken);
+        var deleted = await books.DeleteAsync(id, cancellationToken);
 
         return deleted ? NoContent() : NotFound();
     }

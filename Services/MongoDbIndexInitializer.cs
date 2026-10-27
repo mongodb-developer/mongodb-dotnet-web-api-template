@@ -20,25 +20,16 @@ namespace WebApiProjectWithMongoDB.Services;
 /// volume, move index creation into a migration step or run it from Atlas so a
 /// deploy never blocks on an index build.
 /// </summary>
-public sealed class MongoDbIndexInitializer : IHostedService
+public sealed class MongoDbIndexInitializer(
+    IMongoDatabase database,
+    IOptions<MongoDbSettings> options,
+    ILogger<MongoDbIndexInitializer> logger) : IHostedService
 {
-    private readonly IMongoDatabase _database;
-    private readonly MongoDbSettings _settings;
-    private readonly ILogger<MongoDbIndexInitializer> _logger;
-
-    public MongoDbIndexInitializer(
-        IMongoDatabase database,
-        IOptions<MongoDbSettings> options,
-        ILogger<MongoDbIndexInitializer> logger)
-    {
-        _database = database;
-        _settings = options.Value;
-        _logger = logger;
-    }
+    private readonly MongoDbSettings _settings = options.Value;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var books = _database.GetCollection<Book>(_settings.BooksCollectionName);
+        var books = database.GetCollection<Book>(_settings.BooksCollectionName);
         var builder = Builders<Book>.IndexKeys;
 
         var indexes = new[]
@@ -68,13 +59,13 @@ public sealed class MongoDbIndexInitializer : IHostedService
         try
         {
             await books.Indexes.CreateManyAsync(indexes, cancellationToken);
-            _logger.LogInformation("MongoDB indexes verified on collection {Collection}.", _settings.BooksCollectionName);
+            logger.LogInformation("MongoDB indexes verified on collection {Collection}.", _settings.BooksCollectionName);
         }
         catch (Exception exception)
         {
             // Don't take the whole app down over indexes. Queries still work without
             // them, just slower - and the operator gets a loud warning to act on.
-            _logger.LogError(exception, "Failed to create MongoDB indexes. The API will still start, but queries may be slow.");
+            logger.LogError(exception, "Failed to create MongoDB indexes. The API will still start, but queries may be slow.");
         }
     }
 
