@@ -90,6 +90,14 @@ jobs:
             fi
           done
 
+          # appsettings.Development.json is gitignored in this repo, so it only
+          # reaches CI if it was force-added (git add -f). Without it the template
+          # has nothing to substitute the connection string into.
+          if [ ! -f /tmp/Full.Api/appsettings.Development.json ]; then
+            echo "::error::appsettings.Development.json was not generated - is it tracked in the template repo? (git add -f)"
+            exit 1
+          fi
+
           # Parameter substitution must have fired.
           if ! grep -q '"DatabaseName": "ci_full"' /tmp/Full.Api/appsettings.json; then
             echo "::error::--database was not substituted"
